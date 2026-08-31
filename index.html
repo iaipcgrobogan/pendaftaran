@@ -674,7 +674,8 @@ const params =
 
 
 const ID_EVENT =
-  params.get('event');
+  params.get('event') ||
+  params.get('id_event');
 
 
 let EVENT_DATA = null;
