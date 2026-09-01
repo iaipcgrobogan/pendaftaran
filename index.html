@@ -841,6 +841,30 @@ toggleField(
 );
 
 /*
+   * =====================================================
+   * SELESAI LOAD EVENT
+   * =====================================================
+   */
+
+  } catch (error) {
+
+    console.error(
+      'LOAD EVENT ERROR:',
+      error
+    );
+
+    showMessage(
+      'eventInfo',
+      error.message ||
+      'Gagal memuat data acara.',
+      'error'
+    );
+
+  }
+
+}
+  
+/*
  * =====================================================
  * PENCARIAN NAMA
  * =====================================================
