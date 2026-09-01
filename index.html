@@ -1234,8 +1234,6 @@ async function submitPendaftaran(event) {
 
   }
 
-  sedangMengirimPendaftaran = true;
-
 
   /***************************************************
    * AMBIL DATA FORM
@@ -1324,6 +1322,13 @@ async function submitPendaftaran(event) {
     document.getElementById(
       'submitButton'
     );
+
+
+  /***************************************************
+   * KUNCI DOUBLE SUBMIT
+   ***************************************************/
+
+  sedangMengirimPendaftaran = true;
 
   submitButton.disabled =
     true;
