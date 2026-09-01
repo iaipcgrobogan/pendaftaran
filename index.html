@@ -1121,49 +1121,163 @@ function pilihNama(nama) {
 
 }
 
+/*******************************************************
+ * MEMBACA FILE MENJADI BASE64
+ *******************************************************/
 
-/*
- * =====================================================
+function bacaFileBase64(file) {
+
+  return new Promise(
+    function(resolve, reject) {
+
+      const reader =
+        new FileReader();
+
+      reader.onload =
+        function() {
+
+          const result =
+            String(
+              reader.result || ''
+            );
+
+          /*
+           * Hasil FileReader:
+           *
+           * data:image/jpeg;base64,XXXXXXXX
+           *
+           * Kita hanya mengambil
+           * bagian setelah koma.
+           */
+
+          const commaIndex =
+            result.indexOf(',');
+
+          if (
+            commaIndex === -1
+          ) {
+
+            reject(
+              new Error(
+                'File tidak dapat dibaca.'
+              )
+            );
+
+            return;
+          }
+
+          resolve({
+            name:
+              file.name,
+
+            mimeType:
+              file.type,
+
+            base64:
+              result.substring(
+                commaIndex + 1
+              )
+          });
+
+        };
+
+      reader.onerror =
+        function() {
+
+          reject(
+            new Error(
+              'Gagal membaca file.'
+            )
+          );
+
+        };
+
+      reader.readAsDataURL(
+        file
+      );
+
+    }
+  );
+
+}
+  
+/*******************************************************
  * SUBMIT PENDAFTARAN
- * =====================================================
- */
+ *******************************************************/
 
 async function submitPendaftaran(event) {
 
   event.preventDefault();
 
 
-  const nik =
-    document.getElementById(
-      'nik'
-    ).value.trim();
+  /***************************************************
+   * AMBIL DATA FORM
+   ***************************************************/
 
+  const nik =
+    document
+      .getElementById('nik')
+      .value
+      .trim();
 
   const email =
-    document.getElementById(
-      'email'
-    ).value.trim();
-
+    document
+      .getElementById('email')
+      .value
+      .trim();
 
   const nama =
-    document.getElementById(
-      'nama'
-    ).value.trim();
-
+    document
+      .getElementById('nama')
+      .value
+      .trim();
 
   const asalPC =
-    document.getElementById(
-      'asalPC'
-    ).value.trim();
-
+    document
+      .getElementById('asalPC')
+      .value
+      .trim();
 
   const instansi =
+    document
+      .getElementById('instansi')
+      .value
+      .trim();
+
+
+  /***************************************************
+   * AMBIL FILE BUKTI PEMBAYARAN
+   ***************************************************/
+
+  const inputBukti =
     document.getElementById(
-      'instansi'
-    ).value.trim();
+      'buktiPembayaran'
+    );
+
+  let fileBukti =
+    null;
+
+  if (
+    inputBukti &&
+    inputBukti.files &&
+    inputBukti.files.length > 0
+  ) {
+
+    fileBukti =
+      inputBukti.files[0];
+
+  }
 
 
-  if (!/^\d{16}$/.test(nik)) {
+  /***************************************************
+   * VALIDASI NIK
+   *
+   * Backend tetap melakukan validasi.
+   ***************************************************/
+
+  if (
+    !/^\d{16}$/.test(nik)
+  ) {
 
     showMessage(
       'formMessage',
@@ -1172,23 +1286,91 @@ async function submitPendaftaran(event) {
     );
 
     return;
-
   }
 
+
+  /***************************************************
+   * TOMBOL
+   ***************************************************/
 
   const submitButton =
     document.getElementById(
       'submitButton'
     );
 
-
-  submitButton.disabled = true;
+  submitButton.disabled =
+    true;
 
   submitButton.textContent =
     'Menyimpan...';
 
 
   try {
+
+    /*************************************************
+     * BACA FILE
+     *************************************************/
+
+    let fileData =
+      null;
+
+    if (fileBukti) {
+
+      /*
+       * Batas frontend 5 MB
+       */
+
+      if (
+        fileBukti.size >
+        5 * 1024 * 1024
+      ) {
+
+        throw new Error(
+          'Ukuran bukti pembayaran maksimal 5 MB.'
+        );
+
+      }
+
+
+      /***********************************************
+       * FORMAT YANG DIIZINKAN
+       ***********************************************/
+
+      const allowedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'application/pdf'
+      ];
+
+      if (
+        allowedTypes.indexOf(
+          fileBukti.type
+        ) === -1
+      ) {
+
+        throw new Error(
+          'Format bukti pembayaran harus JPG, PNG, WEBP, atau PDF.'
+        );
+
+      }
+
+
+      /***********************************************
+       * CONVERT BASE64
+       ***********************************************/
+
+      fileData =
+        await bacaFileBase64(
+          fileBukti
+        );
+
+    }
+
+
+    /*************************************************
+     * DATA PENDAFTARAN
+     *************************************************/
 
     const data = {
 
@@ -1210,34 +1392,31 @@ async function submitPendaftaran(event) {
       INSTANSI:
         instansi,
 
-      BUKTI_PEMBAYARAN:
-        ''
+      /*
+       * Sekarang file dikirim
+       * dalam bentuk object.
+       */
+
+      BUKTI_PEMBAYARAN_FILE:
+        fileData
 
     };
 
 
-    /*
-     * Tahap awal:
-     * simpan data utama.
-     *
-     * Upload bukti pembayaran
-     * akan kita sambungkan pada
-     * tahap berikutnya.
-     */
+    /*************************************************
+     * KIRIM KE APPS SCRIPT
+     *************************************************/
 
     const response =
       await fetch(
         API_URL,
         {
-
           method:
             'POST',
 
           headers: {
-
             'Content-Type':
               'text/plain;charset=utf-8'
-
           },
 
           body:
@@ -1255,11 +1434,21 @@ async function submitPendaftaran(event) {
       );
 
 
+    /*************************************************
+     * BACA RESPONSE
+     *************************************************/
+
     const result =
       await response.json();
 
 
-    if (!result.success) {
+    /*************************************************
+     * CEK HASIL
+     *************************************************/
+
+    if (
+      !result.success
+    ) {
 
       throw new Error(
         result.message ||
@@ -1269,21 +1458,31 @@ async function submitPendaftaran(event) {
     }
 
 
+    /*************************************************
+     * BERHASIL
+     *************************************************/
+
     showMessage(
-
       'formMessage',
-
       '✅ Pendaftaran berhasil disimpan.',
-
       'success'
-
     );
 
 
-    document.getElementById(
-      'registrationForm'
-    ).reset();
+    /*************************************************
+     * RESET FORM
+     *************************************************/
 
+    document
+      .getElementById(
+        'registrationForm'
+      )
+      .reset();
+
+
+    /*************************************************
+     * TOMBOL
+     *************************************************/
 
     submitButton.textContent =
       'Pendaftaran Berhasil';
@@ -1291,18 +1490,19 @@ async function submitPendaftaran(event) {
 
   } catch (error) {
 
+    /*************************************************
+     * ERROR
+     *************************************************/
+
     showMessage(
-
       'formMessage',
-
       error.message,
-
       'error'
-
     );
 
 
-    submitButton.disabled = false;
+    submitButton.disabled =
+      false;
 
     submitButton.textContent =
       'Kirim Pendaftaran';
@@ -1310,7 +1510,6 @@ async function submitPendaftaran(event) {
   }
 
 }
-
 
 /*
  * =====================================================
