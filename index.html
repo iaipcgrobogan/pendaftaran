@@ -443,6 +443,33 @@ const API_URL =
 
 
 /* =====================================================
+ * FORMAT TANGGAL TAMPILAN
+ * Hanya menampilkan tanggal, tanpa jam.
+ * Contoh: 26/09/2026 00:00:00 -> 26/09/2026
+ * ===================================================== */
+
+function formatTanggalTampil(value){
+
+  if(!value){
+    return '';
+  }
+
+  const text =
+    String(value).trim();
+
+  const match =
+    text.match(/^(\d{1,2}\/\d{1,2}\/\d{4})/);
+
+  if(match){
+    return match[1];
+  }
+
+  return text;
+
+}
+
+
+/* =====================================================
  * PARAMETER
  *
  * Tanpa ?event=...
@@ -669,13 +696,20 @@ async function loadPendaftaranEvents(){
           'Tanpa Judul';
 
         const tanggal =
-          item.TANGGAL || '';
+          formatTanggalTampil(
+            item.TANGGAL || ''
+          );
 
         const waktu =
           item.WAKTU || '';
 
         const tempat =
           item.TEMPAT || '';
+
+        const batasDaftar =
+          formatTanggalTampil(
+            item.BATAS_DAFTAR || ''
+          );
 
         const deskripsi =
           item.DESKRIPSI || '';
@@ -767,6 +801,22 @@ async function loadPendaftaranEvents(){
               📍
               <strong>Tempat:</strong>
               ${escapeHtml(tempat)}
+            </div>
+          `;
+
+        }
+
+
+        if(
+          batasDaftar &&
+          batasDaftar !== '-'
+        ){
+
+          info += `
+            <div class="event-info">
+              ⏳
+              <strong>Batas Pendaftaran:</strong>
+              ${escapeHtml(batasDaftar)}
             </div>
           `;
 
@@ -1012,13 +1062,20 @@ function renderRegistrationPage(
 ){
 
   const tanggal =
-    eventData.TANGGAL || '';
+    formatTanggalTampil(
+      eventData.TANGGAL || ''
+    );
 
   const waktu =
     eventData.WAKTU || '';
 
   const tempat =
     eventData.TEMPAT || '';
+
+  const batasDaftar =
+    formatTanggalTampil(
+      eventData.BATAS_DAFTAR || ''
+    );
 
   const deskripsi =
     eventData.DESKRIPSI || '';
@@ -1110,6 +1167,22 @@ function renderRegistrationPage(
         📍
         <strong>Tempat:</strong>
         ${escapeHtml(tempat)}
+      </div>
+    `;
+
+  }
+
+
+  if(
+    batasDaftar &&
+    batasDaftar !== '-'
+  ){
+
+    infoHtml += `
+      <div class="event-info">
+        ⏳
+        <strong>Batas Pendaftaran:</strong>
+        ${escapeHtml(batasDaftar)}
       </div>
     `;
 
