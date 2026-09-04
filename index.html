@@ -1402,7 +1402,31 @@ function renderRegistrationPage(
 
 
           <div
-            id="groupAsalPC"
+                      <div
+            id="groupNoTelp"
+            class="form-group"
+          >
+
+            <label>
+              No. Telp / WhatsApp
+            </label>
+
+            <input
+              id="noTelp"
+              type="tel"
+              inputmode="tel"
+              placeholder="Contoh: 081234567890"
+              autocomplete="tel"
+            >
+
+            <div class="help">
+              Nomor yang aktif dan dapat dihubungi.
+            </div>
+
+          </div>
+
+
+id="groupAsalPC"
             class="form-group"
           >
 
@@ -1925,6 +1949,16 @@ async function submitPendaftaran(e){
       ? emailInput.value.trim()
       : '';
 
+  const noTelpInput =
+    document.getElementById(
+      'noTelp'
+    );
+
+  const noTelp =
+    noTelpInput
+      ? noTelpInput.value.trim()
+      : '';
+
   const nama =
     namaInput
       ? namaInput.value.trim()
@@ -2121,6 +2155,9 @@ async function submitPendaftaran(e){
 
       EMAIL:
         email,
+
+      NO_TELP:
+        noTelp,
 
       NAMA:
         nama,
