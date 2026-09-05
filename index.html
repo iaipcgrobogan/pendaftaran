@@ -1880,7 +1880,150 @@ function pilihNama(
 
 }
 
+/* =====================================================
+ * VALIDASI & NORMALISASI NAMA
+ * ===================================================== */
+function validasiDanNormalisasiNama(value){
 
+  let nama = String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  /* Nama wajib diisi */
+  if(!nama){
+    return {
+      valid: false,
+      message: 'Nama lengkap wajib diisi.'
+    };
+  }
+
+  /* Karakter yang tidak diperbolehkan:
+     angka, titik, koma, titik koma, slash,
+     tanda kurung, dan simbol lainnya.
+     
+     Yang diperbolehkan:
+     huruf, spasi, tanda hubung (-),
+     dan apostrof (')
+  */
+  if(!/^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[ '-][A-Za-zÀ-ÖØ-öø-ÿ]+)*$/.test(nama)){
+    return {
+      valid: false,
+      message:
+        'Nama hanya boleh menggunakan huruf dan spasi. Gelar, singkatan, angka, atau tanda baca tidak diperbolehkan.'
+    };
+  }
+
+  /* Tidak boleh ada kata satu huruf
+     Contoh:
+     BUDI S
+     A BUDI
+     BUDI SANTOSO A
+  */
+  const kata = nama.split(' ');
+
+  for(let i = 0; i < kata.length; i++){
+
+    const bagian =
+      kata[i].replace(/[-']/g, '');
+
+    if(bagian.length < 2){
+      return {
+        valid: false,
+        message:
+          'Nama tidak boleh menggunakan inisial atau singkatan satu huruf.'
+      };
+    }
+  }
+
+  /* Daftar gelar / singkatan umum */
+  const gelar = [
+    'dr',
+    'drg',
+    'drh',
+    'prof',
+    'ir',
+    'apt',
+    'ns',
+    'ners',
+    'bidan',
+    'perawat',
+
+    'sh',
+    'se',
+    'sikom',
+    'skom',
+    'spsi',
+    'spsi',
+    'sos',
+    'sos',
+    'skm',
+    'sfar',
+    'sfarm',
+    'sfarm',
+    'skep',
+    's.kep',
+    's.km',
+    's.farm',
+
+    'mkes',
+    'mkes',
+    'mfarm',
+    'm.farm',
+    'msi',
+    'm.si',
+    'mm',
+    'm.m',
+    'mh',
+    'm.h',
+    'mba',
+    'phd',
+
+    'sp',
+    'spa',
+    'spd',
+    'spog',
+    'sp.pd',
+    'spesialis'
+  ];
+
+  for(let i = 0; i < kata.length; i++){
+
+    const bersih =
+      kata[i]
+        .toLowerCase()
+        .replace(/[^a-zà-öø-ÿ]/g, '');
+
+    if(gelar.indexOf(bersih) !== -1){
+      return {
+        valid: false,
+        message:
+          'Nama tidak boleh mengandung gelar atau singkatan seperti "' +
+          kata[i] +
+          '". Silakan masukkan nama tanpa gelar.'
+      };
+    }
+  }
+
+  /* Normalisasi:
+     huruf pertama setiap kata menjadi kapital,
+     sisanya menjadi huruf kecil.
+  */
+  nama =
+    nama
+      .toLowerCase()
+      .replace(
+        /(^|[\s'-])([a-zà-öø-ÿ])/g,
+        function(match, pemisah, huruf){
+          return pemisah + huruf.toUpperCase();
+        }
+      );
+
+  return {
+    valid: true,
+    nama: nama
+  };
+}
+  
 /* =====================================================
  * SUBMIT PENDAFTARAN
  *
@@ -1959,10 +2102,41 @@ async function submitPendaftaran(e){
       ? noTelpInput.value.trim()
       : '';
 
-  const nama =
-    namaInput
-      ? namaInput.value.trim()
-      : '';
+  const namaInputValue =
+  namaInput
+    ? namaInput.value.trim()
+    : '';
+
+const hasilNama =
+  validasiDanNormalisasiNama(
+    namaInputValue
+  );
+
+if(!hasilNama.valid){
+
+  showMessage(
+    'formMessage',
+    hasilNama.message,
+    'error'
+  );
+
+  sedangMengirimPendaftaran =
+    false;
+
+  if(namaInput){
+    namaInput.focus();
+  }
+
+  return;
+}
+
+const nama =
+  hasilNama.nama;
+
+/* Tampilkan kembali nama yang sudah dinormalisasi */
+if(namaInput){
+  namaInput.value = nama;
+}
 
   const asalPC =
     asalPCInput
@@ -2020,24 +2194,6 @@ async function submitPendaftaran(e){
     )
     .trim()
     .toUpperCase() === 'YA';
-
-
-  if(
-    !nama
-  ){
-
-    showMessage(
-      'formMessage',
-      'Nama lengkap wajib diisi.',
-      'error'
-    );
-
-    sedangMengirimPendaftaran =
-      false;
-
-    return;
-
-  }
 
 
   if(
